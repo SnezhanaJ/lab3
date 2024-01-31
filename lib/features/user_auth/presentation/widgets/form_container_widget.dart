@@ -30,7 +30,7 @@ class FormContainerWidget extends StatefulWidget {
 
 
   @override
-  _FormContainerWidgetState createState() => new _FormContainerWidgetState();
+  _FormContainerWidgetState createState() =>  _FormContainerWidgetState();
 }
 
 class _FormContainerWidgetState extends State<FormContainerWidget> {
@@ -48,7 +48,7 @@ class _FormContainerWidgetState extends State<FormContainerWidget> {
         borderRadius: BorderRadius.circular(10),
       ),
       child: TextFormField(
-        style: TextStyle(color: Colors.black),
+        style: const TextStyle(color: Colors.black),
         controller: widget.controller,
         keyboardType: widget.inputType,
         key: widget.fieldKey,
@@ -68,7 +68,7 @@ class _FormContainerWidgetState extends State<FormContainerWidget> {
               });
             },
             child:
-            widget.isPasswordField==true? Icon(_obscureText ? Icons.visibility_off : Icons.visibility, color: _obscureText == false ? Colors.blue : Colors.grey,) : Text(""),
+            widget.isPasswordField==true? Icon(_obscureText ? Icons.visibility_off : Icons.visibility, color: _obscureText == false ? Colors.blue : Colors.grey,) : const Text(""),
           ),
         ),
       ),

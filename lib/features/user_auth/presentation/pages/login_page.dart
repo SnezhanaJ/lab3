@@ -83,7 +83,7 @@ const Text("Don't have an account?"),
 const SizedBox(width: 5,),
 GestureDetector(
 onTap: (){
-Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context)=>SignUpPage()),(route)=>false);
+Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context)=>const SignUpPage()),(route)=>false);
 },
 child: const Text("Sign Up", style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),),
 )
@@ -103,7 +103,7 @@ child: const Text("Sign Up", style: TextStyle(color: Colors.blue, fontWeight: Fo
     if(user != null){
       Fluttertoast.showToast(msg: 'User is successfully signed in ');
       print( 'User is successfully signed in ');
-      Navigator.push(context, MaterialPageRoute(builder: (context)=>HomePage()));
+      Navigator.push(context, MaterialPageRoute(builder: (context)=>const HomePage()));
     }else{
       print("Error");
     }

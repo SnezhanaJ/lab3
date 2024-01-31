@@ -10,7 +10,7 @@ import 'home_page.dart';
 class SignUpPage extends StatefulWidget {
 
 
-  SignUpPage({super.key});
+  const SignUpPage({super.key});
 
   @override
   _SignUpPageState createState() => _SignUpPageState();
@@ -21,15 +21,17 @@ class _SignUpPageState extends State<SignUpPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
+  @override
   void initState() {
     super.initState();
     _auth.setContext(context); // Set the context in initState
   }
-
+  @override
   void dispose(){
     _usernameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    super.dispose();
   }
 
   void _signUp() async{
@@ -41,7 +43,7 @@ class _SignUpPageState extends State<SignUpPage> {
     if(user != null){
       print("User is successfully created");
       Fluttertoast.showToast(msg: 'User is successfully created');
-      Navigator.push(context, MaterialPageRoute(builder: (context)=>HomePage()));
+      Navigator.push(context, MaterialPageRoute(builder: (context)=>const HomePage()));
     }else{
       print("Error");
     }

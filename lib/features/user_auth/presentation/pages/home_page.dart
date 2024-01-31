@@ -1,9 +1,12 @@
+import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:lab3/features/user_auth/presentation/pages/calendar_page.dart';
 import 'package:lab3/features/user_auth/presentation/pages/login_page.dart';
 import 'package:lab3/global/common/toast.dart';
 import 'package:intl/intl.dart';
+import 'package:lab3/local_notifications.dart';
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
 
@@ -13,6 +16,8 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage>{
   late String loggedUserEmail;
+  late List<ExamModel> exams;
+
 
 
   @override
@@ -22,7 +27,97 @@ class _HomePageState extends State<HomePage>{
     FirebaseAuth auth = FirebaseAuth.instance;
     User? user = auth.currentUser;
     loggedUserEmail = user?.email ?? '';
+
+    AwesomeNotifications().setListeners(
+        onActionReceivedMethod: NotificationController.onActionReceiveMethod,
+        onDismissActionReceivedMethod:
+        NotificationController.onDismissActionReceiveMethod,
+        onNotificationCreatedMethod:
+        NotificationController.onNotificationCreateMethod,
+        onNotificationDisplayedMethod:
+        NotificationController.onNotificationDisplayed);
+    _fetchExamsAndScheduleNotifications();
+
   }
+  Future<List<ExamModel>> _getExamsFromFirebase() async {
+    // Implement your logic to fetch exams from Firebase
+    // Example using cloud_firestore package
+    QuerySnapshot<Map<String, dynamic>> querySnapshot =
+    await FirebaseFirestore.instance.collection('exams').where('userEmail', isEqualTo: loggedUserEmail).get();
+
+    // Convert the documents to a list of Exam objects
+    List<ExamModel> exams = querySnapshot.docs.map((doc) {
+      return ExamModel.fromMap(doc.data() as Map<String, dynamic>, doc.id);
+    }).toList();
+
+    return exams;
+  }
+
+  Future<void> _fetchExamsAndScheduleNotifications() async {
+    // Fetch exams from Firebase
+    exams = await _getExamsFromFirebase();
+
+    // Schedule notifications for existing exams
+    for (int i = 0; i < exams.length; i++) {
+      _scheduleNotification(exams[i]);
+    }
+  }
+
+  void _scheduleNotification(ExamModel exam) {
+    final int notificationId = exams.indexOf(exam);
+
+    // Assuming examDate and examTime are DateTime? and TimeOfDay? respectively in ExamModel
+    DateTime scheduledTime = DateTime(
+      exam.examDate!.year,
+      exam.examDate!.month,
+      exam.examDate!.day,
+      exam.examTime!.hour,
+      exam.examTime!.minute,
+    ).subtract(const Duration(days: 1));
+  print("this is the scheduled time ${scheduledTime}");
+
+
+    AwesomeNotifications().createNotification(
+      content: NotificationContent(
+        id: notificationId,
+        channelKey: "basic_channel",
+        title: exam.examName!,
+        body: "You have an exam tomorrow!",
+      ),
+      schedule: NotificationCalendar(
+        day: scheduledTime.day,
+        month: scheduledTime.month,
+        year: scheduledTime.year,
+        hour: scheduledTime.hour,
+        minute: scheduledTime.minute,
+      ),
+    );
+  }
+  //this function is for testing if the notifications are appearing
+  // void _scheduleNotification(ExamModel exam) {
+  //   final int notificationId = exams.indexOf(exam);
+  //
+  //   // Assuming examDate and examTime are DateTime? and TimeOfDay? respectively in ExamModel
+  //   DateTime scheduledTime = DateTime.now().add(Duration(minutes: 1));
+  //   print("this is the scheduled time ${scheduledTime}");
+  //
+  //   AwesomeNotifications().createNotification(
+  //     content: NotificationContent(
+  //       id: notificationId,
+  //       channelKey: "basic_channel",
+  //       title: exam.examName!,
+  //       body: "You have an exam in 2 minutes!",
+  //     ),
+  //     schedule: NotificationCalendar(
+  //       day: scheduledTime.day,
+  //       month: scheduledTime.month,
+  //       year: scheduledTime.year,
+  //       hour: scheduledTime.hour,
+  //       minute: scheduledTime.minute,
+  //     ),
+  //   );
+  // }
+
 
   // Function to show the dialog for adding exams
   Future<void> _showAddExamDialog(BuildContext context) async {
@@ -38,22 +133,22 @@ class _HomePageState extends State<HomePage>{
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Add Exam'),
+          title: const Text('Add Exam'),
           content: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
               // Exam Name
               TextField(
-                decoration: InputDecoration(labelText: 'Exam Name'),
+                decoration: const InputDecoration(labelText: 'Exam Name'),
                 onChanged: (value) {
                   examName = value;
                 },
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
 
               // Exam Date
-              Text('Select Exam Date:'),
+              const Text('Select Exam Date:'),
               InkWell(
                 onTap: () async {
                   DateTime? pickedDate = await showDatePicker(
@@ -68,16 +163,16 @@ class _HomePageState extends State<HomePage>{
                 },
                 child: Row(
                   children: [
-                    Icon(Icons.calendar_today),
-                    SizedBox(width: 8),
+                    const Icon(Icons.calendar_today),
+                    const SizedBox(width: 8),
                     Text(DateFormat('yyyy-MM-dd').format(selectedDate)),
                   ],
                 ),
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
 
               // Exam Time
-              Text('Select Exam Time:'),
+              const Text('Select Exam Time:'),
               InkWell(
                 onTap: () async {
                   TimeOfDay? pickedTime = await showTimePicker(
@@ -90,8 +185,8 @@ class _HomePageState extends State<HomePage>{
                 },
                 child: Row(
                   children: [
-                    Icon(Icons.access_time),
-                    SizedBox(width: 8),
+                    const Icon(Icons.access_time),
+                    const SizedBox(width: 8),
                     Text(selectedTime.format(context)),
                   ],
                 ),
@@ -103,23 +198,18 @@ class _HomePageState extends State<HomePage>{
               onPressed: () {
                 Navigator.of(context).pop(); // Close the dialog
               },
-              child: Text('Cancel'),
+              child: const Text('Cancel'),
             ),
             TextButton(
               onPressed: () {
                 // Handle saving exam details here
-                // Print for now, replace with your logic
-                print('Exam Name: $examName');
-                print('Exam Date: ${DateFormat('yyyy-MM-dd').format(selectedDate)}');
-                print('Exam Time: ${selectedTime.format(context)}');
-
                 //saving the data
                 _createData(ExamModel(userEmail:userEmail,examName: examName,examDate: selectedDate,examTime: selectedTime));
 
                 // Close the dialog
                 Navigator.of(context).pop();
               },
-              child: Text('Save'),
+              child: const Text('Save'),
             ),
           ],
         );
@@ -141,41 +231,89 @@ class _HomePageState extends State<HomePage>{
           ),
           IconButton(onPressed:  () {
             FirebaseAuth.instance.signOut();
-            Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context)=>LoginPage()),(route)=>false);
+            Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context)=>const LoginPage()),(route)=>false);
             showToast(context,message: "Successfully signed out");
-          }, icon: Icon(Icons.logout))
+          }, icon: const Icon(Icons.logout))
         ],
       ),
-      body: StreamBuilder(
-        stream: FirebaseFirestore.instance
-            .collection("exams")
-            .where('userEmail', isEqualTo: loggedUserEmail)
-            .snapshots(),
-        builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
-          if (snapshot.hasError) {
-            return Text('Error: ${snapshot.error}');
-          }
+      body: Column(
+        children: [
+          StreamBuilder(
+            stream: FirebaseFirestore.instance
+                .collection("exams")
+                .where('userEmail', isEqualTo: loggedUserEmail)
+                .snapshots(),
+            builder:
+                (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+              if (snapshot.hasError) {
+                return Text('Error: ${snapshot.error}');
+              }
 
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return CircularProgressIndicator();
-          }
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const CircularProgressIndicator();
+              }
 
-          List<DocumentSnapshot> exams = snapshot.data!.docs;
-          return GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 1,
-              crossAxisSpacing: 8.0,
-              childAspectRatio: 2,
-              mainAxisSpacing: 8.0,
-            ),
-            itemCount: exams.length,
-            itemBuilder: (BuildContext context, int index) {
-              return _buildExamCard(exams[index]);
+              List<DocumentSnapshot> exams = snapshot.data!.docs;
+              return Expanded(
+                child: GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 1,
+                    crossAxisSpacing: 8.0,
+                    childAspectRatio: 2,
+                    mainAxisSpacing: 8.0,
+                  ),
+                  itemCount: exams.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    return _buildExamCard(exams[index]);
+                  },
+                ),
+              );
             },
-          );
-        },
+          ),
+          ElevatedButton(
+            onPressed: () {
+              // NotificationService().showNotification(
+              //    1,
+              //   'Heello',
+              //   'You have an exam due!',
+              // );
+              // Navigate to another page when the button is pressed
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const CalendarPage()),
+              );
+            },
+            child: const Text('Exam calendar'),
+          ),
+          // FutureBuilder(
+          //   // Replace 'exams' with your Firebase collection name
+          //   future: FirebaseFirestore.instance.collection('exams').get(),
+          //   builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+          //     if (snapshot.connectionState == ConnectionState.done) {
+          //       if (snapshot.hasData) {
+          //         List<QueryDocumentSnapshot> exams = snapshot.data!.docs;
+          //
+          //         for (var exam in exams) {
+          //           // Assuming ExamModel has 'title' field, replace it with the actual field
+          //           String title = exam['examName'];
+          //           print('this is the title ${title}');
+          //
+          //           NotificationService().showNotification(
+          //             exams.indexOf(exam) + 1,
+          //             title,
+          //             'You have an exam due!',
+          //           );
+          //         }
+          //       } else if (snapshot.hasError) {
+          //         return const Center(child: Text('Error fetching data'));
+          //       }
+          //     }
+          //     return const SizedBox();
+          //     },
+          // ),
+        ],
       ),
     );
   }
@@ -191,23 +329,23 @@ class _HomePageState extends State<HomePage>{
           children: [
             Text(
               examData['examName'] ?? '',
-              style: TextStyle(
+              style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
               ),
             ),
-            SizedBox(height: 4),
+            const SizedBox(height: 4),
             Text(
               'Date: ${examData['examDate']}',
-              style: TextStyle(
+              style: const TextStyle(
                 color: Colors.grey,
                 fontSize: 14,
               ),
             ),
-            SizedBox(height: 4),
+            const SizedBox(height: 4),
             Text(
               'Time: ${examData['examTime']}',
-              style: TextStyle(
+              style: const TextStyle(
                 color: Colors.grey,
                 fontSize: 14,
               ),
@@ -259,7 +397,18 @@ class ExamModel{
       "examName": examName,
       "examDate":_formatDate(examDate),
       "examTime": "${examTime!.hour}:${examTime!.minute}", // Convert TimeOfDay to String
-      "id":"id"
+      "id":id,
     };
   }
+  // Factory method to create Exam object from a map
+  factory ExamModel.fromMap(Map<String, dynamic> map, String documentId) {
+    return ExamModel(
+      id: documentId,
+      examName: map['examName'] ?? '',
+      userEmail: map['userEmail'] ?? '',
+      examDate: DateTime.parse(map['examDate'] ?? ''),
+      examTime: _convertStringToTimeOfDay(map['examTime']),
+    );
+  }
+
 }
