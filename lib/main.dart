@@ -1,5 +1,4 @@
 import 'package:awesome_notifications/awesome_notifications.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:lab3/features/app/splash_screen/splash_screen.dart';
@@ -38,11 +37,9 @@ Future main() async {
 
    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
    Fluttertoast.showToast(msg: "App Started");
-   FirebaseMessaging.onBackgroundMessage(backgroundHandler);
    runApp(const MyApp());
 }
 
-Future backgroundHandler(RemoteMessage msg) async{}
 
 class MyApp extends StatefulWidget {
   const MyApp({Key? key}) : super(key: key);

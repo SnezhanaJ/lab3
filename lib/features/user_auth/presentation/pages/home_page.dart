@@ -2,11 +2,15 @@ import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:lab3/features/user_auth/presentation/pages/calendar_page.dart';
 import 'package:lab3/features/user_auth/presentation/pages/login_page.dart';
 import 'package:lab3/global/common/toast.dart';
 import 'package:intl/intl.dart';
 import 'package:lab3/local_notifications.dart';
+
+import '../../../../location_services.dart';
+import '../widgets/map_widget.dart';
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
 
@@ -74,9 +78,8 @@ class _HomePageState extends State<HomePage>{
       exam.examTime!.hour,
       exam.examTime!.minute,
     ).subtract(const Duration(days: 1));
-  print("this is the scheduled time ${scheduledTime}");
 
-
+    scheduleNotificationIfNearUniversity();
     AwesomeNotifications().createNotification(
       content: NotificationContent(
         id: notificationId,
@@ -93,13 +96,46 @@ class _HomePageState extends State<HomePage>{
       ),
     );
   }
-  //this function is for testing if the notifications are appearing
+  void scheduleNotificationIfNearUniversity() {
+    LocationService().determinePosition().then((userPosition) {
+      double userLatitude = userPosition.latitude;
+      double userLongitude =userPosition.longitude;
+      // for testing
+      // double userLatitude = 42.004186212873655;
+      // double userLongitude = 21.409531941596985;
+
+      // Coordinates of the university
+      double universityLatitude = 42.004186212873655;
+      double universityLongitude = 21.409531941596985;
+
+      // Calculate the distance between the user's location and the university
+      double distance = Geolocator.distanceBetween(userLatitude, userLongitude, universityLatitude, universityLongitude);
+
+      // If the distance is below a certain threshold, schedule a notification
+      if (distance < 100) { // You can adjust the threshold distance as needed
+        // Schedule the notification here
+        AwesomeNotifications().createNotification(
+          content: NotificationContent(
+            id: 10,
+            channelKey: 'basic_channel',
+            title: 'Near University',
+            body: 'You are near the university check if you have an exam!',
+          ),
+          schedule: NotificationInterval(interval: 5), // Example: Schedule a notification every 5 seconds
+        );
+      }
+    });
+  }
+  // this function is for testing if the notifications are appearing
   // void _scheduleNotification(ExamModel exam) {
   //   final int notificationId = exams.indexOf(exam);
   //
   //   // Assuming examDate and examTime are DateTime? and TimeOfDay? respectively in ExamModel
   //   DateTime scheduledTime = DateTime.now().add(Duration(minutes: 1));
   //   print("this is the scheduled time ${scheduledTime}");
+  //
+  //   scheduleNotificationIfNearUniversity();
+  //
   //
   //   AwesomeNotifications().createNotification(
   //     content: NotificationContent(
@@ -229,6 +265,7 @@ class _HomePageState extends State<HomePage>{
               _showAddExamDialog(context); // Show the add exam dialog
             },
           ),
+          IconButton(onPressed: _openMap, icon: const Icon(Icons.map)),
           IconButton(onPressed:  () {
             FirebaseAuth.instance.signOut();
             Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context)=>const LoginPage()),(route)=>false);
@@ -274,12 +311,6 @@ class _HomePageState extends State<HomePage>{
           ),
           ElevatedButton(
             onPressed: () {
-              // NotificationService().showNotification(
-              //    1,
-              //   'Heello',
-              //   'You have an exam due!',
-              // );
-              // Navigate to another page when the button is pressed
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const CalendarPage()),
@@ -287,32 +318,6 @@ class _HomePageState extends State<HomePage>{
             },
             child: const Text('Exam calendar'),
           ),
-          // FutureBuilder(
-          //   // Replace 'exams' with your Firebase collection name
-          //   future: FirebaseFirestore.instance.collection('exams').get(),
-          //   builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
-          //     if (snapshot.connectionState == ConnectionState.done) {
-          //       if (snapshot.hasData) {
-          //         List<QueryDocumentSnapshot> exams = snapshot.data!.docs;
-          //
-          //         for (var exam in exams) {
-          //           // Assuming ExamModel has 'title' field, replace it with the actual field
-          //           String title = exam['examName'];
-          //           print('this is the title ${title}');
-          //
-          //           NotificationService().showNotification(
-          //             exams.indexOf(exam) + 1,
-          //             title,
-          //             'You have an exam due!',
-          //           );
-          //         }
-          //       } else if (snapshot.hasError) {
-          //         return const Center(child: Text('Error fetching data'));
-          //       }
-          //     }
-          //     return const SizedBox();
-          //     },
-          // ),
         ],
       ),
     );
@@ -362,7 +367,12 @@ class _HomePageState extends State<HomePage>{
     final newExam = ExamModel(userEmail:examModel.userEmail, examName:examModel.examName,examDate: examModel.examDate,examTime: examModel.examTime, id: id).toJson();
     examCollection.doc(id).set(newExam);
   }
+  void _openMap() {
+    Navigator.push(
+        context, MaterialPageRoute(builder: (context) => const MapWidget()));
+  }
 }
+
 
 class ExamModel{
   final String? userEmail;
