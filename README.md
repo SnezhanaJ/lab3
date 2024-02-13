@@ -5,7 +5,8 @@
 ![image](https://github.com/SnezhanaJ/lab3/assets/127696203/152235e4-d15b-4fcb-88f4-c5c0bdeaa4ff)
 ![image](https://github.com/SnezhanaJ/lab3/assets/127696203/80911b38-1298-43a7-8df1-01045c6979f3)
 ![image](https://github.com/SnezhanaJ/lab3/assets/127696203/a2e2f784-7e24-432c-9676-f7e60af5331a)
-
+![image](https://github.com/SnezhanaJ/lab3/assets/127696203/c7b74410-7c63-457f-b380-b8bb91313ff8)
+![image](https://github.com/SnezhanaJ/lab3/assets/127696203/2895dc60-7b67-485e-81cd-11d4755be956)
 
 
 A new Flutter project.
